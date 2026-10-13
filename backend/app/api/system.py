@@ -35,7 +35,7 @@ from ..logger import logger
 router = APIRouter(tags=["system"])
 
 # Versión del producto. La que consulta el actualizador contra la etiqueta publicada en GitHub.
-VERSION = "1.0"
+VERSION = "1.0.1"
 APP = "narsil-navegacion"
 
 # Sonda a S.A.R.A.: corta a propósito. Sólo responde a «¿está ahí?», y una interfaz que se queda

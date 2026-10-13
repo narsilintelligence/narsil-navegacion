@@ -16,8 +16,10 @@ RAIZ="$(pwd)"
 test -f ui/dist/index.html || { echo "Falta ui/dist/index.html: compila la interfaz (cd ui && npm run build)"; exit 1; }
 
 VENV=.venv-build
-# --system-site-packages: PyGObject (gi) viene del sistema, no de pip.
-[ -x "$VENV/bin/python" ] || python3 -m venv --system-site-packages "$VENV"
+# --system-site-packages: PyGObject (gi) viene del sistema, no de pip. Y con el Python del sistema:
+# es el único que ve el gi de apt (con setup-python, en el CI, se empaquetaba sin ventana propia).
+[ -x "$VENV/bin/python" ] || /usr/bin/python3 -m venv --system-site-packages "$VENV"
+"$VENV/bin/python" -c "import gi" 2>/dev/null || { echo "El entorno de construcción no ve gi (python3-gi): no se construye."; exit 1; }
 "$VENV/bin/pip" install --disable-pip-version-check --quiet --upgrade pip
 "$VENV/bin/pip" install --disable-pip-version-check --quiet -r backend/requirements.txt -r empaquetado/requirements-build.txt
 
@@ -45,5 +47,8 @@ rm -rf dist build
     --hidden-import uvicorn.lifespan.on \
     "$RAIZ/backend/narsil_navegacion.py"
 
+# La ventana propia (GTK y WebKitGTK) tiene que ir dentro; sin ella la app abre el navegador del sistema.
+CONTENIDO="$("$VENV/bin/pyi-archive_viewer" -l -r "dist/$NOMBRE")"
+grep -qE "'gi(\.|/)" <<< "$CONTENIDO" || { echo "El ejecutable no lleva gi: no se publica."; exit 1; }
 ls -la "dist/$NOMBRE"
 echo "CONSTRUIDO $(pwd)/dist/$NOMBRE"
